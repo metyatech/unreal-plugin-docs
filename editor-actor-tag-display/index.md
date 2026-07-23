@@ -1,201 +1,181 @@
 ---
 ---
 
-# Editor Actor Tag Display
+# Actor Metadata Overlay
 
 [Back to plugin list](../)
 
 ## Overview
 
-Editor Actor Tag Display shows an actor's `Actor Tags` above the actor in the Unreal Editor viewport.
-
-Display behavior is configured per actor class. Each configured class can have its own text color and position offset.
-
-The plugin is editor-only and does not add a runtime feature to packaged games.
+Actor Metadata Overlay is an editor-only Unreal Engine viewport tool that keeps the metadata needed for level layout and debugging visible above matching actors. It displays Actor Label, Actor Name, Actor Class, Actor Tags, Gameplay Tags, Folder, Data Layers, and selected direct property values through configurable templates.
 
 ## Requirements
 
-- Unreal Engine 5.6
+- Unreal Engine 5.6, 5.7, or 5.8
 - Windows Win64
-- Actors with at least one value in the actor-level `Tags` array
-- At least one configured actor class
-- Actor Tag Display enabled in settings or through the viewport Show menu
+- Editor only
+- A normal Level Editor Viewport
 
-Use only plugin packages explicitly marked compatible with the project's Unreal Engine version.
+Use the ZIP built for the project's Unreal Engine version. Runtime packaged games are not supported.
 
 ## Installation
 
 ### From Fab
 
-1. Acquire **Editor Actor Tag Display** from Fab.
-2. Install the plugin for the appropriate Unreal Engine version.
-3. Open the project.
-4. Open **Edit > Plugins**.
-5. Enable **Editor Actor Tag Display**.
-6. Restart the editor when requested.
+1. Download the ZIP for the project's Unreal Engine version.
+2. Place the `EditorActorTagDisplay` folder in the project's `Plugins` directory.
+3. Enable **Actor Metadata Overlay** from **Edit > Plugins**.
+4. Restart the editor when requested.
 
-### From Source
+### From source
 
-Place the repository at:
-
-```text
-<Project>/Plugins/EditorActorTagDisplay
-```
-
-Regenerate project files or open the project and accept the rebuild prompt.
+Place the repository in `<Project>/Plugins/EditorActorTagDisplay`, regenerate project files if needed, and enable the plugin from **Edit > Plugins**.
 
 ## Quick Start
 
-1. Open **Editor Preferences**.
-2. Open **Plugins > Actor Tag Display**.
-3. Add an entry to **Class Configurations**.
-4. Select the actor class whose tags should be displayed.
-5. Choose the text color.
-6. Set the optional position offset.
-7. Enable **Enable Tag Display**.
-8. Select an actor of the configured class.
-9. Add one or more values to the actor's `Tags` array.
-10. Return to the level viewport.
+1. Open **Project Settings > Plugins > Actor Metadata Overlay**.
+2. Confirm the default rule is enabled, or add a rule for the actor class you want to inspect.
+3. Choose a template such as `{ActorLabel}\nClass: {ActorClass}\nTags: {ActorTags}`.
+4. Select an actor in a normal Level Editor Viewport.
+5. Open the viewport **Show** menu and choose **Actor Metadata Overlay > Selected Actors**.
+6. Switch to **All Matching Actors** to inspect every matching actor, or **Off** to hide the overlay.
 
-The tags appear above the actor.
+Turn **Game View** on to hide the overlay. Turn it off to show it again. PIE and SIE game screens, Static Mesh Editor previews, and other Asset Preview Viewports never display the overlay.
 
-The display can also be toggled from:
+## Display Modes
 
-```text
-Level Viewport > Show > Actor Tags
-```
+- **Selected Actors** displays matching selected actors.
+- **All Matching Actors** displays every cached actor that matches a rule.
+- **Off** hides all overlay text and bounding boxes.
+
+These modes are available from the Level Editor Viewport **Show** menu as radio buttons.
 
 ## Features
 
-* Displays actor-level tags in the editor viewport
-* Filters actors by configured actor class
-* Matches subclasses through Unreal's class hierarchy
-* Per-class text color
-* Per-class position offset
-* Global text-size setting
-* Global outline-width setting
-* Viewport Show menu toggle
-* Multi-tag display with one tag per line
-* Automatic placement above actor bounds
-* Automatic camera-facing text
-* Automatic cleanup when actors or configurations no longer match
-* Transient display actors hidden from the Scene Outliner
+- Actor Label, Name, and Class tokens.
+- Actor Tags and Gameplay Tags sorted case-insensitively.
+- Folder and Data Layers tokens.
+- Direct Property Tokens for safe, public, non-transient properties.
+- Selected, All, and Off display modes.
+- Required and excluded Actor Tag filters.
+- Per-rule and global distance filtering.
+- Optional actor bounding boxes.
+- Separate shared Project Settings and per-user Editor Preferences.
+- Event-driven cache updates and per-viewport Canvas rendering.
 
-## Settings / Blueprint Nodes
+## Rule Evaluation
 
-This plugin does not expose Blueprint nodes. Configuration is performed through editor settings.
+Rules are evaluated from top to bottom. The first enabled rule whose Actor Class, inheritance setting, required Actor Tags, and excluded Actor Tags match owns the actor. Later matching rules are ignored. Empty or unresolved Actor Classes never match.
 
-### Class Configurations
+## Rule Fields
 
-Each entry contains:
+| Field | Description |
+| --- | --- |
+| Rule Name | Identifies the rule and unresolved-class warnings. |
+| Enabled | Disables a rule without removing it. |
+| Actor Class | Required class filter. |
+| Include Derived Classes | Uses class inheritance when enabled. |
+| Required Actor Tags | Every listed Actor Tag must be present. |
+| Excluded Actor Tags | Any listed Actor Tag rejects the rule. |
+| Display Template | Overrides the project default when non-empty. |
+| Display Color | Text and bounding-box color. |
+| World Offset | Offset added to the actor anchor. |
+| Max Draw Distance | Overrides the global distance when greater than zero. |
+| Selected Only | Requires the actor to be selected. |
+| Draw Bounding Box | Enables the rule's box when the user preference also allows boxes. |
 
-| Field             | Purpose                                                                 |
-| ----------------- | ----------------------------------------------------------------------- |
-| `Actor Class`     | Actor class and subclasses whose actor-level tags are displayed.        |
-| `Display Color`   | Text color for the matching class.                                      |
-| `Position Offset` | World-space offset added after calculating the top of the actor bounds. |
+## Template Tokens
 
-When more than one configuration could match an actor, the first matching configuration is used.
+| Token | Value |
+| --- | --- |
+| `{ActorLabel}` | Actor label shown in the editor. |
+| `{ActorName}` | UObject actor name. |
+| `{ActorClass}` | Actor class name with a display-only `_C` suffix removed. |
+| `{ActorTags}` | Actor Tags sorted and joined by `, `. |
+| `{GameplayTags}` | Owned Gameplay Tags sorted and joined by `, `. |
+| `{Folder}` | Actor folder path. |
+| `{DataLayers}` | Actor data layer names sorted and joined by `, `. |
+| `{Property:PropertyName}` | A supported direct property value. |
 
-### Enable Tag Display
+Unknown tokens become `<unknown:TokenName>`. Missing properties become `<missing:PropertyName>`. Unsupported properties become `<unsupported:PropertyName>`.
 
-Enables or disables all generated tag labels.
+## Property Tokens
 
-The same value is controlled by the viewport **Show > Actor Tags** toggle.
+Property tokens accept direct top-level public properties with `CPF_Edit` or `CPF_BlueprintVisible`. They reject dotted paths, array indexes, functions, transient properties, deprecated properties, and private properties. Supported values include booleans, signed and unsigned integers, floats, doubles, enums, `FName`, `FString`, `FText`, UObject references, soft object references, and structs. Line breaks and tabs become spaces, and long values are shortened with `...`.
 
-### Text Size
+## Project Settings
 
-Sets the world size of all tag text.
+Open **Project Settings > Plugins > Actor Metadata Overlay** to configure shared project data:
 
-Default:
+- Rules and rule order.
+- Default Display Template.
+- Outline Color.
+- Max Property Value Length.
 
-```text
-30
-```
+## Editor Preferences
 
-Existing labels are updated when the value changes.
+Open **Editor Preferences > Plugins > Actor Metadata Overlay** to configure per-user display preferences:
 
-### Outline Width
+- Display Mode.
+- Global Max Draw Distance.
+- Text Scale.
+- Outlined.
+- Draw Bounding Boxes.
 
-Sets the outline-width parameter used by the bundled text material.
+## Viewport Behavior
 
-Default:
+The plugin draws only into the matching normal Level Editor Viewport scene. It displays in Perspective, Top, Front, Side, and split Level Editor Viewports, and remains visible when **Game View** is off. It is hidden when **Game View** is on, during PIE or SIE game screens, in Static Mesh Editor previews, and in Scene Capture, Thumbnail, or Asset Preview Viewports.
 
-```text
-10
-```
+## Performance
 
-Existing dynamic material instances are updated when the value changes.
-
-### Display Position
-
-The plugin calculates the top of the actor's component bounds and then adds the configured position offset.
-
-When valid component bounds are unavailable, the actor origin is used before applying the offset.
-
-### Stored Settings
-
-The settings use `EditorPerProjectUserSettings`. They are stored per user and per project rather than as shared project-wide defaults.
+The overlay uses an event-driven cache. Level changes, actor movement, folder changes, property changes, component changes, map changes, and settings changes refresh the affected cache or rebuild it once. Drawing traverses cached matching actors per viewport rather than scanning the world every frame.
 
 ## Limitations
 
-* Editor-only
-* Win64 only in the current plugin descriptor
-* Not available as a packaged-game runtime feature
-* Displays actor-level tags only
-* Component tags are not displayed
-* Actors without tags are ignored
-* Actors without a matching configured class are ignored
-* The first matching class configuration wins
-* Tags are displayed one per line
-* No per-tag color or position configuration
-* No tag-name include or exclude filter
-* No distance culling
-* No occlusion testing
-* No custom font setting
-* No label background
-* Settings are per user and per project
-* The editor world is scanned continuously while display is enabled, which may add editor overhead in very large levels
+- Editor only; no runtime module or packaged-game feature.
+- Win64 only.
+- Actor Tags are displayed but not edited.
+- Data Layers are empty in a non-World Partition map; verify non-empty output in a World Partition map.
+- Property Tokens support direct properties only.
+- Asset Preview Viewports are intentionally excluded.
 
 ## Troubleshooting
 
-### No tag text appears
+### Nothing appears
 
-Verify that:
+Confirm the plugin is enabled, the editor was restarted, the viewport mode is **Selected Actors** or **All Matching Actors**, the actor matches the first rule, and the actor is visible and within the applicable distance limit.
 
-* **Enable Tag Display** is enabled.
-* **Show > Actor Tags** is checked.
-* The actor has at least one actor-level tag.
-* A Class Configuration exists.
-* The configured class matches the actor or one of its parent classes.
-* The plugin is enabled.
-* The current platform and Unreal Engine version are supported.
+### The overlay disappears
 
-### The wrong color or offset is used
+Turn **Game View** off. The overlay is intentionally hidden in Game View, PIE, SIE, and preview viewports.
 
-An actor may match more than one configured parent class. The first matching Class Configuration is used. Reorder the configurations so the intended entry appears first.
+### Data Layers are empty
 
-### The text is inside the actor
+Use a World Partition map and assign the actor to data layers. New non-World Partition maps have no data layers to display.
 
-Increase the class-specific `Position Offset`, especially its Z value.
+### The wrong rule is used
 
-Actors without valid component bounds use the actor origin as the base position.
+Rules are first-match-wins. Move the intended rule above later matching rules and verify required and excluded Actor Tags.
 
-### Another user does not see the same configuration
+## Support
 
-The settings are stored as `EditorPerProjectUserSettings`. Each user must configure or receive the appropriate editor-user settings separately.
-
-### Performance decreases in a very large level
-
-Disable **Actor Tags** when labels are not required, or reduce the number of configured classes and tagged actors.
-
-For reproducible problems, open an issue in the [EditorActorTagDisplayPlugin repository](https://github.com/metyatech/EditorActorTagDisplayPlugin/issues).
+Open an issue in the [EditorActorTagDisplayPlugin repository](https://github.com/metyatech/EditorActorTagDisplayPlugin/issues).
 
 ## Version History
 
+### 2.0.0
+
+- Renamed the product to Actor Metadata Overlay.
+- Replaced transient TextRender actors with per-viewport canvas rendering.
+- Added rule-based metadata templates.
+- Added Actor Tags, Gameplay Tags, folder, data layer, and property tokens.
+- Added Selected, All, and Off modes.
+- Added distance filtering and optional bounding boxes.
+- Split project and per-user settings.
+- Added event-driven cache updates.
+- Restricted drawing to matching Level Editor viewport scenes.
+- Added Automation Tests.
+
 ### 1.0.0
 
-* Initial editor viewport tag display
-* Per-class color and position configuration
-* Text size and outline width settings
-* Viewport Show menu integration
+- Initial actor tag viewport display.

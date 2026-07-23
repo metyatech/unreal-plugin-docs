@@ -7,6 +7,6 @@ Documentation for Unreal Engine plugins published by metyatech.
 
 - [Runtime Asset Import](./runtime-asset-import/)
 - [Server Manage Tool](./server-manage-tool/)
-- [Editor Actor Tag Display](./editor-actor-tag-display/)
+- [Actor Metadata Overlay](./editor-actor-tag-display/)
 
 Each product page is the canonical documentation for installation, usage, requirements, limitations, troubleshooting, and version history.
