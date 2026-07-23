@@ -148,7 +148,9 @@ This applies to:
 * glTF external buffers
 * Diffuse/base-color textures
 
-References that escape through parent-directory traversal, outside-root absolute paths, junctions, symbolic links, device paths, URLs, or alternate data streams are rejected. **This prevents an imported model from reading unrelated files on the host system.**
+References that escape through parent-directory traversal, outside-root absolute paths, junctions, symbolic links, device paths, URLs, alternate data streams, or auxiliary files with multiple hard links are rejected. **This prevents path references from escaping the selected model directory sandbox.**
+
+For untrusted model packages, extract or copy the model and its intended dependencies into a dedicated directory before import. The sandbox prevents model references from resolving outside that directory. Files intentionally placed inside the directory are considered available to the model.
 
 ### In-Memory Imports
 
@@ -167,6 +169,10 @@ Imports enforce these resource limits:
 * Total unique opened bytes per import: 1 GiB
 * Raw texture maximum dimension: 16384
 * Raw texture maximum pixels: 67,108,864
+
+File-count and total-byte budgets are charged when a file is actually opened, not when its existence is queried. If a file grows and is reopened during the same import, the additional bytes count toward the total budget. Shrinking a file does not refund budget during that import.
+
+Compressed image headers are validated before texture decoding. Width, height, pixel count, and compressed byte limits apply to external textures, embedded textures, data URIs, and texture data supplied through mesh-data construction APIs.
 
 ## Limitations
 
