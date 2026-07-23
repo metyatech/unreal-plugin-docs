@@ -11,6 +11,8 @@ Runtime Asset Import is an Unreal Engine code plugin that imports static 3D mesh
 
 Dynamic Mesh Components are the recommended output.
 
+**File imports resolve dependencies only inside the model directory sandbox. In-memory imports remain self-contained and never read external files.**
+
 ## Requirements
 
 - Unreal Engine 5.4, 5.5, 5.7, or 5.8
@@ -96,7 +98,11 @@ if (Result != EConstructDynamicMeshComponentFromAssetFileResult::Success ||
 * Hierarchical node transforms
 * Multiple mesh sections
 * Imported diffuse or base color
-* One embedded texture per material
+* First external or embedded diffuse/base-color texture per material
+* File imports can resolve required auxiliary files such as OBJ material files and glTF external buffers
+* File imports can load the first external diffuse/base-color texture
+* Auxiliary files are sandboxed to the model directory and its subdirectories
+* Embedded textures are supported by file and in-memory imports
 * Collision generation on constructed components
 * FBX, OBJ, glTF, GLB, and DAE importers
 * Assimp 6.0.5 built from the official source tag
@@ -107,11 +113,11 @@ if (Result != EConstructDynamicMeshComponentFromAssetFileResult::Success ||
 
 The parent material must contain all three parameters.
 
-| Parameter                           | Type      | Purpose                                      |
-| ----------------------------------- | --------- | -------------------------------------------- |
-| `TextureBlendIntensityForBaseColor` | Scalar    | Selects the base-color texture contribution. |
-| `BaseColor4`                        | Vector    | Supplies the imported diffuse or base color. |
-| `BaseColorTexture`                  | Texture2D | Supplies the imported embedded texture.      |
+| Parameter | Type | Purpose |
+| --- | --- | --- |
+| `TextureBlendIntensityForBaseColor` | Scalar | Selects the base-color texture contribution. |
+| `BaseColor4` | Vector | Supplies the imported diffuse or base color. |
+| `BaseColorTexture` | Texture2D | Supplies the imported external or embedded diffuse/base-color texture. |
 
 The bundled `/RuntimeAssetImport/AssetImporterMeshMaterial` material satisfies this contract.
 
@@ -130,6 +136,38 @@ The plugin exposes these six Blueprint-callable functions:
 
 The construction functions include `ShouldRegisterComponentToOwner`. Leave it enabled for normal use unless the caller will register and manage the returned components manually.
 
+## Import Security and Resource Limits
+
+### File Imports
+
+File imports may resolve auxiliary files only when their final resolved target remains inside the model file's directory or a subdirectory.
+
+This applies to:
+
+* OBJ material files
+* glTF external buffers
+* Diffuse/base-color textures
+
+References that escape through parent-directory traversal, outside-root absolute paths, junctions, symbolic links, device paths, URLs, or alternate data streams are rejected. **This prevents an imported model from reading unrelated files on the host system.**
+
+### In-Memory Imports
+
+In-memory imports support self-contained data, data URIs, and embedded textures.
+
+They do not read external material files, buffers, or textures because the current memory API does not receive a trusted base directory.
+
+### Limits
+
+Imports enforce these resource limits:
+
+* Main model file: 512 MiB
+* Individual auxiliary file: 256 MiB
+* Compressed texture: 64 MiB
+* Total unique files opened per import: 256
+* Total unique opened bytes per import: 1 GiB
+* Raw texture maximum dimension: 16384
+* Raw texture maximum pixels: 67,108,864
+
 ## Limitations
 
 * Win64 only
@@ -140,8 +178,10 @@ The construction functions include `ShouldRegisterComponentToOwner`. Leave it en
 * No LOD import
 * No latent or asynchronous API
 * No URL downloader
-* External texture references are not loaded
-* Only the first material texture is used
+* Only the first diffuse/base-color texture is used
+* File imports resolve auxiliary files only inside the model directory sandbox
+* In-memory imports do not resolve external files
+* Import and texture size limits apply
 * Only the first UV channel is used
 * Only the first vertex-color channel is used
 * Runtime-created meshes are local and are not automatically replicated
@@ -166,7 +206,13 @@ Check all of the following:
 
 ### The mesh appears without an external texture
 
-External texture references are not loaded. Use an embedded texture or apply the required material and texture separately after import.
+Check all of the following:
+
+* The texture path resolves inside the model directory or a subdirectory.
+* The file exists and is readable.
+* The texture is the first diffuse/base-color texture.
+* The texture is within the documented size limit.
+* In-memory imports require an embedded texture or data URI.
 
 ### Importing causes a visible pause
 
@@ -187,3 +233,6 @@ For reproducible problems, open an issue in the [RuntimeAssetImportPlugin reposi
 * Dynamic Mesh and Procedural Mesh construction
 * FBX, OBJ, glTF, GLB, and DAE support
 * Win64 support
+* Sandboxed external auxiliary-file and texture loading for file imports
+* Embedded texture support for file and memory imports
+* File, dependency, and texture resource limits
