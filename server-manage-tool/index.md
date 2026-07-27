@@ -5,222 +5,168 @@
 
 [Back to plugin list](../)
 
+**Server Manage Tool configures map-specific addresses and launches the complete configured local server group during PIE only after every required UDP port passes preflight.** It does not build, deploy, or host a production dedicated server.
+
+Version: **1.1.0**
+
 ## Overview
 
-Server Manage Tool provides map-specific server address settings and an Unreal Editor workflow for launching local dedicated-server processes during Play In Editor.
+Server Manage Tool provides map-specific server address settings, a Server Mode menu in the Unreal Editor Play menu, and runtime Blueprint functions for address lookup and server exit requests.
 
 The plugin contains three modules:
 
-- `ServerModePlayMenu`: editor menu and local-server process management
+- `ServerModePlayMenu`: editor menu, Local Launch, and managed-process cleanup
 - `ServerInfoSettingsModule`: map and server-address configuration
 - `ServerManageLibrary`: runtime Blueprint functions
 
 ## Requirements
 
-- An Unreal Engine project using a plugin package compatible with the project's engine version
-- A saved `.uproject` file
-- Saved maps referenced by their full Unreal package names
-- The Unreal Editor executable must be available when using Local Launch
-- Dedicated-server behavior must already be implemented by the project
+- An Unreal Engine project using a compatible plugin package.
+- A saved `.uproject` and maps referenced by full package names.
+- An Unreal Editor executable available for Local Launch.
+- Project-side dedicated-server behavior that already supports `-server`.
 
-The plugin does not package, deploy, configure, or host a production dedicated server.
+The package was verified with a Blueprint-only UE 5.8 Win64 host. Real game-project Development/Shipping integration and packaged executable behavior remain project-specific and unverified here.
 
 ## Installation
 
 ### From Fab
 
 1. Acquire **Server Manage Tool** from Fab.
-2. Install the plugin for the appropriate Unreal Engine version.
+2. Install it for the project's Unreal Engine version.
 3. Open the project.
-4. Open **Edit > Plugins**.
+4. Open `Edit > Plugins`.
 5. Enable **Server Manage Tool**.
 6. Restart the editor when requested.
 
-### From Source
+### From source
 
-Place the repository at:
+Place the plugin at:
 
 ```text
 <Project>/Plugins/ServerManageTool
 ```
 
-Then regenerate project files or open the project and accept the rebuild prompt.
+Regenerate project files or use the project's normal source build workflow, then restart the editor after module changes.
 
 ## Quick Start
 
-1. Open **Project Settings**.
-2. Open **Project > Servers**.
-3. Add one entry to `Server List` for each server map.
-4. Set `Map Name` to the map's full package name, for example:
+1. Open `Project Settings > Project > Servers`.
+2. Add one `Server List` entry per server map.
+3. Use each map's full package name, such as `/Game/Maps/Lobby`.
+4. Enter the `Server Address` used by Project Setting mode.
+5. Open the editor Play menu and choose **Server Mode**.
+6. Select **Project Setting** or **Local Launch**.
+7. Call **Get Server Address** from the project's own connection flow.
+8. Call **Request Server Exit** only from the dedicated server process when it should stop.
 
-```text
-/Game/Maps/Lobby
-```
-
-5. Set `Server Address` to the address the client should use outside Local Launch, for example:
-
-```text
-example.com:7777
-```
-
-6. Open the Play menu in the Unreal Editor.
-7. Open **Server Mode**.
-8. Select one of the following:
-
-   * **Project Setting**: use the configured `Server Address`.
-   * **Local Launch**: launch local editor server processes and use loopback addresses.
-
-9. Call **Get Server Address** with the map asset.
-10. Pass the returned string to the project's own connection or client-travel logic.
-
-The plugin resolves an address. It does not automatically connect the client.
+The plugin resolves an address; it does not connect the client automatically.
 
 ## Features
 
-* Per-map server-address configuration
-* Project Settings integration
-* Editor Play menu integration
-* Project Setting mode
-* Local Launch mode
-* Automatic local server-process startup at PIE begin
-* Automatic local server-process termination at PIE end
-* Blueprint-accessible server-address lookup
-* Blueprint-accessible server-exit request
+- Map-specific server-address configuration.
+- Project Settings integration.
+- Project Setting and Local Launch modes.
+- Local dedicated-server process launch during PIE.
+- All-port UDP preflight before Local Launch.
+- All-or-nothing launch when a configured port is unavailable.
+- Shifted-port runtime detection through expected-port validation.
+- PIE-end and module-shutdown managed-server cleanup.
+- Blueprint functions `GetServerAddress(Map)` and `RequestServerExit()`.
 
-## Settings / Blueprint Nodes
-
-### Server List
+## Configuration
 
 `Project Settings > Project > Servers` contains `Server List`.
 
-Each entry contains:
+| Field | Meaning |
+| --- | --- |
+| `Map Name` | Exact full Unreal package name, such as `/Game/Maps/Lobby`. |
+| `Server Address` | Address returned in Project Setting mode. |
 
-| Field            | Purpose                                                                                             |
-| ---------------- | --------------------------------------------------------------------------------------------------- |
-| `Map Name`       | Full Unreal package name of the map, such as `/Game/Maps/Lobby`.                                    |
-| `Server Address` | Address returned outside Local Launch. The plugin stores and returns this as an unvalidated string. |
-
-### Server Mode
-
-The editor Play menu contains **Server Mode**.
-
-#### Project Setting
-
-`Get Server Address` returns the `Server Address` configured for the requested map.
-
-#### Local Launch
-
-At PIE begin, the plugin starts one Unreal Editor server process for every entry in `Server List`.
-
-Ports are assigned from the list order:
+In Local Launch mode, every configured entry is launched. Ports begin at fixed base port `7777` and follow list order:
 
 ```text
-First entry:  7777
-Second entry: 7778
-Third entry:  7779
+Entry 0: 7777
+Entry 1: 7778
+Entry 2: 7779
 ```
 
-In Local Launch mode, `Get Server Address` returns:
+Reordering entries changes their Local Launch ports. Before any process starts, all assigned UDP ports are checked. If one is unavailable, the group is not partially launched.
 
-```text
-127.0.0.1:<assigned port>
-```
-
-The local processes are terminated when PIE ends.
+## Blueprint API
 
 ### Get Server Address
 
-Blueprint function:
-
-```text
-GetServerAddress(Map)
-```
-
-Behavior:
-
-* Uses the map's full package name.
-* Finds an exact matching `Map Name` entry.
-* Returns the configured address in Project Setting mode.
-* Returns the loopback address and assigned local port in Local Launch mode.
-* Returns an empty string and logs an error when the map is null or no matching entry exists.
+`GetServerAddress(Map)` finds an exact configured map entry. Project Setting mode returns the configured address. Local Launch returns `127.0.0.1:<assigned port>`. A null map or missing exact entry returns an empty string and logs an error.
 
 ### Request Server Exit
 
-Blueprint function:
+`RequestServerExit()` requests the current process to exit its main loop. Use it only on the dedicated-server side; do not call it casually from a client. The plugin does not guarantee a particular operating-system exit code.
+
+## Local Launch lifecycle
+
+At PIE begin, the plugin reads all entries, assigns ports, performs UDP preflight, launches the full group when preflight passes, and validates each server's actual bound port. At PIE end, managed server processes are cleaned up. Module shutdown also clears managed server ownership.
+
+The Output Log markers are:
 
 ```text
-RequestServerExit()
+SMT_PORT_PREFLIGHT_PASSED
+SMT_PORT_PREFLIGHT_FAILED
+SMT_SERVER_PROCESS_LAUNCH_FAILED
+SMT_PORT_VALIDATION_PASSED
+SMT_PORT_VALIDATION_FAILED
 ```
 
-Requests the current process to exit its main loop.
-
-## Limitations
-
-* Local Launch is an editor and PIE feature.
-* Local Launch starts a server process for every configured server entry, not only the currently selected map.
-* The base port is fixed at `7777`.
-* Additional ports are assigned from `Server List` order.
-* Reordering entries changes their Local Launch ports.
-* No port-availability check is performed.
-* No server-readiness or health check is performed.
-* No retry or automatic restart is performed.
-* No automatic client travel or connection is performed.
-* No production-server deployment is performed.
-* No remote-server lifecycle management is performed.
-* `Server Address` is not parsed or validated.
-* A missing map configuration returns an empty string.
-* Local server processes are terminated when PIE ends.
+There is no health check, retry, or automatic restart. Do not rely on a specific operating-system exit code after shifted-port detection.
 
 ## Troubleshooting
 
-### Get Server Address returns an empty string
+### Empty address
 
-Verify that:
+Check that the map is not null and that `Map Name` exactly matches its full package name. Use `/Game/Maps/Lobby`, not only `Lobby`.
 
-* The map input is not null.
-* `Map Name` uses the full package name.
-* The configured value exactly matches `Map.GetLongPackageName()`.
-* The entry exists in `Project Settings > Project > Servers`.
+### No local servers
 
-Use a value such as:
+Check Local Launch mode, the project executable, map package names, project `-server` support, and the Output Log. A preflight failure prevents partial launch and reports the unavailable port.
 
-```text
-/Game/Maps/Lobby
-```
+### Port conflict
 
-Do not use only:
+Resolve the unavailable port named by `SMT_PORT_PREFLIGHT_FAILED`, then retry PIE. The plugin does not promise an automatic port shift for the managed group.
 
-```text
-Lobby
-```
+### Shifted port
 
-### A local server does not start
+Use `SMT_PORT_VALIDATION_FAILED` to compare expected and actual ports. The plugin requests clean server exit; the exact OS exit status is not a contract.
 
-Verify that:
+### Client connection
 
-* The `.uproject` file exists.
-* The current Unreal Editor executable exists.
-* The configured map package name is valid.
-* The assigned port is not already in use.
-* The project supports running with `-server`.
-* The Output Log does not contain a process-launch error.
+The plugin does not connect the client automatically. Pass `GetServerAddress(Map)` to the project's own connection or travel flow.
 
-### The client does not connect automatically
+For reproducible problems, open an issue in the [ServerManageToolPlugin repository](https://github.com/metyatech/ServerManageToolPlugin/issues) with sanitized logs, engine version, mode, list order, and the relevant markers.
 
-This is expected. Call `GetServerAddress`, then pass its result to the project's own client-travel or connection implementation.
+## Limitations
 
-### Local ports changed
+- Local Launch is Editor/PIE only.
+- The base port is fixed at `7777` and assignment follows Server List order.
+- Local Launch launches all configured entries.
+- The project must already support `-server`.
+- The plugin does not build, package, deploy, or host a production server.
+- The plugin does not connect clients automatically.
+- There is no health check, retry, or automatic restart.
+- Real game-project Development/Shipping integration and packaged executable behavior remain unverified.
 
-Local ports are derived from `Server List` order. Restore the original order or update the project logic that depends on the assigned ports.
+## Version history
 
-For reproducible problems, open an issue in the [ServerManageToolPlugin repository](https://github.com/metyatech/ServerManageToolPlugin/issues).
+### 1.1.0
 
-## Version History
+- UDP preflight.
+- Atomic all-or-nothing launch.
+- Shifted-port validation.
+- Editor delegate cleanup.
+- Module-shutdown server cleanup.
+- Fab Config/Content structure and packaged documentation.
 
-### 1.0
+### 1.0.0
 
-* Initial map-specific server settings
-* Project Setting and Local Launch modes
-* Local dedicated-server process startup during PIE
-* `GetServerAddress`
-* `RequestServerExit`
+- Initial settings.
+- Project Setting and Local Launch modes.
+- Initial Blueprint API.
