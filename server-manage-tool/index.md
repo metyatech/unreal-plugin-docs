@@ -7,7 +7,7 @@
 
 **Server Manage Tool configures map-specific addresses and launches the complete configured local server group during PIE only after every required UDP port passes preflight.** It does not build, deploy, or host a production dedicated server.
 
-Version: **1.1.1**
+Version: **1.1.2**
 
 ## Overview
 
@@ -26,7 +26,7 @@ The plugin contains three modules:
 - An Unreal Editor executable available for Local Launch.
 - Project-side dedicated-server behavior that already supports `-server`.
 
-Version 1.1.1 was verified on UE 5.8 Win64 with a Blueprint-only host, a real C++ game project in Development and Shipping, and packaged Development and Shipping `AddressAndExit` runs. A dedicated `TargetType.Server` executable is not provided or verified.
+Version 1.1.2 was verified on UE 5.8 Win64 with a Blueprint-only host, a real C++ game project in Development and Shipping, and packaged Development and Shipping `AddressAndExit` runs. A dedicated `TargetType.Server` executable is not provided or verified. This release confirms that the historical `Udon-Tobira` Git identity and the current `metyatech` identity represent the same developer, and normalizes Source copyright notices without changing product behavior or the Blueprint API.
 
 ## Installation
 
@@ -155,6 +155,12 @@ For reproducible problems, open an issue in the [ServerManageToolPlugin reposito
 - A dedicated `TargetType.Server` executable is not provided or verified.
 
 ## Version history
+
+### 1.1.2
+
+- Confirmed continuity between the historical `Udon-Tobira` Git identity and the current `metyatech` identity.
+- Normalized Source copyright notices and added repository mailmap metadata without rewriting Git history.
+- No product behavior or Blueprint API changes.
 
 ### 1.1.1
 
