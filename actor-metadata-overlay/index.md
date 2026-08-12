@@ -23,13 +23,13 @@ Use the ZIP built for the project's Unreal Engine version. Runtime packaged game
 ### From Fab
 
 1. Download the ZIP for the project's Unreal Engine version.
-2. Place the `EditorActorTagDisplay` folder in the project's `Plugins` directory.
+2. Place the `ActorMetadataOverlay` folder in the project's `Plugins` directory.
 3. Enable **Actor Metadata Overlay** from **Edit > Plugins**.
 4. Restart the editor when requested.
 
 ### From source
 
-Place the repository in `<Project>/Plugins/EditorActorTagDisplay`, regenerate project files if needed, and enable the plugin from **Edit > Plugins**.
+Place the repository in `<Project>/Plugins/ActorMetadataOverlay`, regenerate project files if needed, and enable the plugin from **Edit > Plugins**.
 
 ## Quick Start
 
@@ -159,7 +159,7 @@ Rules are first-match-wins. Move the intended rule above later matching rules an
 
 ## Support
 
-Open an issue in the [EditorActorTagDisplayPlugin repository](https://github.com/metyatech/EditorActorTagDisplayPlugin/issues).
+Open an issue in the [ActorMetadataOverlayPlugin repository](https://github.com/metyatech/ActorMetadataOverlayPlugin/issues).
 
 ## Version History
 
