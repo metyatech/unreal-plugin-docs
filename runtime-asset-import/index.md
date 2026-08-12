@@ -119,7 +119,7 @@ The parent material must contain all three parameters.
 | `BaseColor4` | Vector | Supplies the imported diffuse or base color. |
 | `BaseColorTexture` | Texture2D | Supplies the imported external or embedded diffuse/base-color texture. |
 
-The bundled `/RuntimeAssetImport/AssetImporterMeshMaterial` material satisfies this contract.
+The bundled `/RuntimeAssetImport/RuntimeAssetImport/AssetImporterMeshMaterial` material satisfies this contract.
 
 A parent material missing any required parameter is rejected before a partial component hierarchy is created.
 
