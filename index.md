@@ -6,6 +6,7 @@
 Documentation for Unreal Engine plugins published by metyatech.
 
 - [Runtime Asset Import](./runtime-asset-import/)
+- [Runtime Unicode Text](./runtime-unicode-text/)
 - [Server Manage Tool](./server-manage-tool/)
 - [Actor Metadata Overlay](./actor-metadata-overlay/)
 
