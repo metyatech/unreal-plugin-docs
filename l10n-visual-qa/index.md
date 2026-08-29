@@ -1,0 +1,318 @@
+# L10N Visual QA
+
+**Capture every explicitly selected UMG widget across every language and
+resolution, then review only what changed.** L10N Visual QA is a Win64 Unreal
+Engine editor plugin for localization screenshot regression checks.
+
+> **Remember:** Fast Matrix is a convenient preview. Runtime Matrix is the
+> authoritative path.
+
+## Overview
+
+The plugin evaluates the combinations you put in a profile:
+
+```text
+UMG Widget × Culture × Resolution
+```
+
+It writes local PNG captures, metadata, JSON summaries, an offline HTML report,
+and image differences produced by Unreal's `ScreenShotComparisonTools`.
+
+## Requirements
+
+- Unreal Engine **5.5, 5.6, 5.7, or 5.8**
+- **Win64** development environment
+- A real rendering RHI for capture; `-nullrhi` is not supported
+
+The plugin has no third-party plugin dependency and ships no `Content/` assets.
+
+## Installation
+
+1. Copy the plugin folder into `<Project>/Plugins/L10NVisualQA`.
+2. Regenerate project files if your IDE needs it.
+3. Enable **L10N Visual QA** in the project plugin settings.
+4. Add a profile to `<Project>/Config/L10NVisualQA/Profiles/`.
+5. Open **Tools > L10N Visual QA**.
+
+## Fast Matrix
+
+Fast Matrix uses the current Editor World, Game Localization Preview, and
+`FWidgetRenderer` for quick offscreen captures. It restores the localization
+preview language and enabled/disabled state after success, failure, or stop.
+
+The dashboard always labels this mode:
+
+```text
+FAST PREVIEW — NOT RUNTIME AUTHORITATIVE
+```
+
+Fast Matrix does not execute fixtures. Use Runtime Matrix when the result must
+represent a game process.
+
+## Runtime Matrix
+
+Runtime Matrix starts a separate sibling `UnrealEditor.exe -game` process for
+each culture, one culture at a time. Each process changes its requested
+resolution sequentially, waits for the viewport to reach that size, warms up,
+and captures each widget. The process uses `-RenderOffscreen` and never uses a
+packaged executable or `-nullrhi`.
+
+On cancellation or timeout, the child process and its process tree are
+terminated, waited on, and their handles and pipes are closed. Remaining cases
+are recorded as `Cancelled`.
+
+## Creating a Profile
+
+Save a file such as `ReleaseUI.json`. The basename and `name` must match
+exactly. This example is a complete profile:
+
+```json
+{
+  "schemaVersion": 1,
+  "name": "ReleaseUI",
+  "map": "/Game/Maps/L10NQA",
+  "targets": [
+    {
+      "id": "MainMenu",
+      "widgetClass": "/Game/UI/WBP_MainMenu.WBP_MainMenu_C",
+      "fixtureClass": null,
+      "enabled": true,
+      "warmupFrames": 3,
+      "timeoutSeconds": 15
+    }
+  ],
+  "cultures": ["en", "ja", "de"],
+  "resolutions": [
+    { "width": 1280, "height": 720 },
+    { "width": 1920, "height": 1080 }
+  ],
+  "comparison": { "tolerance": "IgnoreAntiAliasing" },
+  "fast": { "enabled": true },
+  "runtime": {
+    "enabled": true,
+    "cultureProcessTimeoutSeconds": 120,
+    "resolutionSettleFrames": 3
+  }
+}
+```
+
+## Profile Reference
+
+**Strict validation happens before a run.** Unknown fields at every level are
+errors, so a misspelled setting cannot silently change a QA run.
+
+- `schemaVersion`: exactly `1`.
+- `name`: `[A-Za-z0-9_]{1,64}` and equal to the filename basename.
+- `targets`: 1–100 entries; enabled combinations must remain at or below 4096.
+- `id`: unique case-insensitively and `[A-Za-z0-9_]{1,64}`.
+- `widgetClass`: a concrete `UUserWidget` subclass, checked before capture.
+- `fixtureClass`: `null` or a concrete `UL10NVisualQAFixture` subclass.
+- `warmupFrames`: 0–600; `timeoutSeconds`: 1–300.
+- `cultures`: 1–64 valid `FInternationalization` cultures, without duplicate
+  names or surrounding whitespace.
+- `resolutions`: 1–32 unique entries, 64–8192 per axis, at most 33,177,600
+  pixels.
+- `comparison.tolerance`: `IgnoreAntiAliasing` or `Strict`.
+- `runtime.map`: required and must be a valid long package name when Runtime
+  Matrix is enabled.
+- `runtime.cultureProcessTimeoutSeconds`: 10–1800.
+- `runtime.resolutionSettleFrames`: 1–60.
+
+## Runtime Fixture
+
+`UL10NVisualQAFixture` is the single customer-facing Blueprint extension point.
+Runtime order is:
+
+```text
+create fixture → set World context → BeforeWidgetCreated
+→ create widget → AfterWidgetCreated → add to viewport
+→ warmup → capture → remove widget → AfterCapture → cleanup
+```
+
+`AfterCapture(..., false)` is called when capture fails. Fixtures are ignored
+by Fast Matrix. A fixture is a **QA-only asset**: exclude it from Shipping
+cook/package rules because it is not gameplay content.
+
+## Baseline Workflow
+
+The first successful capture of a combination is `New`. Review the current
+image, then use **Approve Selected** or the confirmed **Approve All** action in
+the editor dashboard. Only `Changed`, `New`, and `InvalidBaseline` cases are
+eligible. Approval copies the current PNG and metadata atomically.
+
+Fast and Runtime baselines are intentionally separate, and UE minor versions
+are separate too:
+
+```text
+<Project>/Test/L10NVisualQA/Baselines/UE<major>.<minor>/<Mode>/<Target>/<Culture>/<Width>x<Height>.png
+```
+
+## Editor Dashboard
+
+Open **Tools > L10N Visual QA**. The dashboard provides:
+
+- profile selection and validation errors;
+- **Reload Profiles** and **Open Profiles Folder**;
+- **Run Fast**, **Run Runtime**, and **Stop**;
+- culture × resolution result status using both text and symbols;
+- current PNG preview and baseline/current/difference paths;
+- **Approve Selected** and confirmation-protected **Approve All**.
+
+Run controls are disabled while the selected profile is invalid. The dashboard
+does not edit profile JSON; edit the file and reload it instead.
+
+## Command Line / CI
+
+Use the commandlet for Runtime Matrix from the same project and plugin
+installation:
+
+```powershell
+UnrealEditor-Cmd.exe <Project>.uproject `
+  -run=L10NVisualQA `
+  -Profile=ReleaseUI `
+  -Mode=Runtime `
+  -AllowNew `
+  -unattended `
+  -nop4 `
+  -RenderOffscreen
+```
+
+Fast Matrix must run in `UnrealEditor.exe`, because Unreal commandlets use
+NullRHI. Use the editor bootstrap flag:
+
+```powershell
+UnrealEditor.exe <Project>.uproject `
+  -L10NVisualQAFast `
+  -Profile=ReleaseUI `
+  -Mode=Fast `
+  -AllowNew `
+  -unattended `
+  -nop4 `
+  -RenderOffscreen
+```
+
+Parameters:
+
+- `-Profile=<profile basename>` — selects a basename only; separators and
+  traversal are rejected.
+- `-Mode=Runtime` — selects Runtime Matrix for the commandlet.
+- `-L10NVisualQAFast` with `-Mode=Fast` — selects Fast Matrix for the editor
+  bootstrap.
+- `-AllowNew` — allows `New` cases to return success.
+
+Exit codes:
+
+- `0`: every case is `Pass`, or `New` with `-AllowNew`.
+- `1`: `Changed`, `New`, `CaptureFailed`, or `InvalidBaseline` remains.
+- `2`: invalid profile, startup, worker, orchestration, rendering, or internal
+  failure. `-nullrhi` always returns `2`.
+
+## Output Files
+
+Runs are written below:
+
+```text
+<Project>/Saved/L10NVisualQA/Runs/<RunId>/
+├── summary.json
+├── report.html
+├── captures/Fast/ or captures/Runtime/
+├── diffs/
+├── metadata/
+└── logs/
+```
+
+`RunId` is `yyyyMMddTHHmmssfffZ-<8 hex chars>`. `summary.json` contains run
+metadata, totals, cases, warnings, and errors. `report.html` is a standalone
+offline file with escaped values, filtering, and relative current/baseline/diff
+links.
+
+## Limitations
+
+Version 0.1.0 does not translate text, call AI APIs, edit PO/CSV, scan missing
+or hardcoded translations, scan glyphs, discover every project widget, judge
+overlap or visual beauty, automate gameplay/CommonUI, test packaged EXEs,
+provide pseudo-localization, support macOS/Linux, use cloud/telemetry/
+analytics, modify user assets, operate source control, auto-approve baselines,
+or run Runtime workers in parallel.
+
+## Privacy
+
+There is **no telemetry, analytics, cloud service, or AI API**. Screenshots,
+metadata, reports, and logs stay local to the project unless you copy them
+elsewhere. The plugin does not upload captures or inspect a remote service.
+
+## Troubleshooting
+
+### Profile is not listed
+
+Confirm the file is under `Config/L10NVisualQA/Profiles/`, ends in `.json`,
+uses a safe basename, and has the same `name`. Click **Reload Profiles**.
+Unknown fields, invalid cultures, or a disabled Fast and Runtime pair also
+make a profile invalid.
+
+### Widget class load failure
+
+Check that the soft class path names the generated class, for example
+`/Game/UI/WBP_MainMenu.WBP_MainMenu_C`, and that the class is a concrete
+`UUserWidget` subclass available to the selected project/map.
+
+### Fixture class load failure
+
+Check that the class is a concrete subclass of `UL10NVisualQAFixture`. Fixtures
+run only in Runtime Matrix; they are not needed for Fast Matrix.
+
+### Runtime worker starts but capture fails
+
+Open the run's `logs/runtime-<culture>.log`, then check the PNG and metadata
+paths in the summary. Confirm a real RHI, a valid map, a viewport, and a valid
+widget class. `-nullrhi` cannot capture widgets.
+
+### Runtime worker timeout
+
+Confirm the map loads without prompts, lower warmup/settle settings only when
+the project can safely do so, and inspect the culture log. The runner
+terminates the child tree on timeout and records unfinished cases as
+`Cancelled`.
+
+### Unexpected `Changed` results
+
+Check culture, resolution, UE minor baseline folder, Fast versus Runtime mode,
+font availability, and the selected comparison tolerance. Review the current,
+baseline, and diff links before approving; baseline approval is intentionally
+manual.
+
+### RHI warning
+
+An RHI difference is reported as a warning and does not alone make a baseline
+invalid. For stable pixel output, compare on the same RHI and machine class.
+
+### `-nullrhi` cannot be used
+
+This is intentional. Widget rendering and pixel comparison require a real
+rendering RHI. Remove `-nullrhi` and use `-RenderOffscreen` instead.
+
+### A worker remains after abnormal OS termination
+
+Close the owning editor process, verify no `UnrealEditor.exe` process still has
+the project command line, and remove only the stale run directory after
+preserving any evidence needed for diagnosis. Normal Stop/timeout paths wait
+for the child and its tree before returning.
+
+### Fixture Blueprint packaging/cook warning
+
+Blueprint fixtures are development QA assets. Exclude them from Shipping cook
+and package rules; do not add them to a production content dependency merely
+to make Runtime Matrix profiles work.
+
+## Version History
+
+### 0.1.0
+
+Initial release for Unreal Engine 5.5–5.8 on Win64 with Fast Matrix, Runtime
+Matrix, strict profiles, Epic image comparison, manual baseline approval,
+offline JSON/HTML reports, and CI commandlet support.
+
+## Links
+
+- [Source repository](https://github.com/metyatech/L10NVisualQAPlugin)
+- [Support](https://metyatech.github.io/unreal-plugin-docs/l10n-visual-qa/#troubleshooting)
