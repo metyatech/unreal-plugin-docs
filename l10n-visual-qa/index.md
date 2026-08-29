@@ -36,9 +36,11 @@ The plugin has no third-party plugin dependency and ships no `Content/` assets.
 
 ## Fast Matrix
 
-Fast Matrix uses the current Editor World, Game Localization Preview, and
-`FWidgetRenderer` for quick offscreen captures. It restores the localization
-preview language and enabled/disabled state after success, failure, or stop.
+Fast Matrix is Editor-process-only. It uses the current Editor World, Game
+Localization Preview, Slate, and `FWidgetRenderer` for quick offscreen
+captures. It restores the localization preview enabled state, configured
+preview language, and current culture after success, failure, Stop, or module
+shutdown.
 
 The dashboard always labels this mode:
 
@@ -47,7 +49,7 @@ FAST PREVIEW — NOT RUNTIME AUTHORITATIVE
 ```
 
 Fast Matrix does not execute fixtures. Use Runtime Matrix when the result must
-represent a game process.
+represent a game process; Runtime is the only Commandlet path.
 
 ## Runtime Matrix
 
@@ -57,9 +59,15 @@ resolution sequentially, waits for the viewport to reach that size, warms up,
 and captures each widget. The process uses `-RenderOffscreen` and never uses a
 packaged executable or `-nullrhi`.
 
-On cancellation or timeout, the child process and its process tree are
-terminated, waited on, and their handles and pipes are closed. Remaining cases
-are recorded as `Cancelled`.
+Each case has a `targets[].timeoutSeconds` timeout covering widget creation
+through capture completion. A target timeout records `CaptureFailed`, invokes
+fixture cleanup once with failure, and continues to the next case. The
+separate `runtime.cultureProcessTimeoutSeconds` limit covers the complete
+culture worker process. On user cancellation, the child process tree is
+terminated, waited on, and its handles and pipes are closed; unfinished cases
+in the current culture and all cases in later cultures are recorded as
+`Cancelled`. A culture process timeout or abnormal worker exit records all
+unexecuted cases as `RunnerError` with the infrastructure cause.
 
 ## Creating a Profile
 
@@ -138,7 +146,11 @@ cook/package rules because it is not gameplay content.
 The first successful capture of a combination is `New`. Review the current
 image, then use **Approve Selected** or the confirmed **Approve All** action in
 the editor dashboard. Only `Changed`, `New`, and `InvalidBaseline` cases are
-eligible. Approval copies the current PNG and metadata atomically.
+eligible. Approval preflights and stages the current PNG and `.meta.json`,
+backs up any existing pair, commits both in the same destination directory,
+and restores the old pair on failure. It never leaves one file from the old
+pair and one from the new pair. After success, cases are compared again and
+`summary.json` and `report.html` are regenerated.
 
 Fast and Runtime baselines are intentionally separate, and UE minor versions
 are separate too:
@@ -155,11 +167,20 @@ Open **Tools > L10N Visual QA**. The dashboard provides:
 - **Reload Profiles** and **Open Profiles Folder**;
 - **Run Fast**, **Run Runtime**, and **Stop**;
 - culture × resolution result status using both text and symbols;
-- current PNG preview and baseline/current/difference paths;
+- enabled Target selection list on the left;
+- clickable Culture × Resolution cells on the right with explicit `[PASS]`,
+  `[CHANGED]`, `[NEW]`, `[CAPTURE FAILED]`, `[INVALID BASELINE]`,
+  `[CANCELLED]`, `[RUNNER ERROR]`, and `[NOT RUN]` labels;
+- simultaneous Baseline, Current, and Diff previews with image paths;
+- selected Target, Culture, Resolution, status, global difference, maximum
+  local difference, and message;
 - **Approve Selected** and confirmation-protected **Approve All**.
 
-Run controls are disabled while the selected profile is invalid. The dashboard
-does not edit profile JSON; edit the file and reload it instead.
+Missing preview files show an empty image and `Not available`. While a run is
+active, profile changes, reload, run, and approval controls are disabled;
+**Stop** remains available. The dashboard refreshes approximately every 0.1
+seconds so intermediate matrix results are visible. The dashboard does not
+edit profile JSON; edit the file and reload it instead.
 
 ## Command Line / CI
 
@@ -177,8 +198,8 @@ UnrealEditor-Cmd.exe <Project>.uproject `
   -RenderOffscreen
 ```
 
-Fast Matrix must run in `UnrealEditor.exe`, because Unreal commandlets use
-NullRHI. Use the editor bootstrap flag:
+Fast Matrix must run in `UnrealEditor.exe`, because it uses Slate and
+`FWidgetRenderer`. Use the editor bootstrap flag:
 
 ```powershell
 UnrealEditor.exe <Project>.uproject `
@@ -271,8 +292,9 @@ widget class. `-nullrhi` cannot capture widgets.
 
 Confirm the map loads without prompts, lower warmup/settle settings only when
 the project can safely do so, and inspect the culture log. The runner
-terminates the child tree on timeout and records unfinished cases as
-`Cancelled`.
+terminates the child tree on culture process timeout and records unfinished
+cases as `RunnerError`. A `targets[].timeoutSeconds` timeout is a case-level
+`CaptureFailed` result and still advances to the next case.
 
 ### Unexpected `Changed` results
 
