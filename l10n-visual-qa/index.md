@@ -67,7 +67,10 @@ culture worker process. On user cancellation, the child process tree is
 terminated, waited on, and its handles and pipes are closed; unfinished cases
 in the current culture and all cases in later cultures are recorded as
 `Cancelled`. A culture process timeout or abnormal worker exit records all
-unexecuted cases as `RunnerError` with the infrastructure cause.
+unexecuted cases as `RunnerError` with the infrastructure cause. Messages for
+`CaptureFailed`, `Cancelled`, and `RunnerError` cases are retained in the
+summary and report, and cancellation or culture timeout saves the started
+culture's `logs/runtime-<culture>.log`.
 
 ## Creating a Profile
 
@@ -149,8 +152,10 @@ the editor dashboard. Only `Changed`, `New`, and `InvalidBaseline` cases are
 eligible. Approval preflights and stages the current PNG and `.meta.json`,
 backs up any existing pair, commits both in the same destination directory,
 and restores the old pair on failure. It never leaves one file from the old
-pair and one from the new pair. After success, cases are compared again and
-`summary.json` and `report.html` are regenerated.
+pair and one from the new pair. If rollback itself fails, recoverable
+`.backup-*` files remain and their PNG and metadata paths are reported in the
+error. After success, cases are compared again and `summary.json` and
+`report.html` are regenerated.
 
 Fast and Runtime baselines are intentionally separate, and UE minor versions
 are separate too:
