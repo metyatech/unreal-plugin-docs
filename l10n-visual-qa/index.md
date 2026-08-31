@@ -4,8 +4,8 @@
 resolution, then review only what changed.** L10N Visual QA is a Win64 Unreal
 Engine editor plugin for localization screenshot regression checks.
 
-> **Remember:** Fast Matrix is a convenient preview. Runtime Matrix is the
-> authoritative path.
+> **Remember:** Use **Editor mode** for everyday localization checks and
+> **Runtime mode** for final verification or runtime-specific behavior.
 
 ## Overview
 
@@ -34,24 +34,19 @@ The plugin has no third-party plugin dependency and ships no `Content/` assets.
 4. Add a profile to `<Project>/Config/L10NVisualQA/Profiles/`.
 5. Open **Tools > L10N Visual QA**.
 
-## Fast Matrix
+## Editor check
 
-Fast Matrix is Editor-process-only. It uses the current Editor World, Game
-Localization Preview, Slate, and `FWidgetRenderer` for quick offscreen
-captures. It restores the localization preview enabled state, configured
-preview language, and current culture after success, failure, Stop, or module
-shutdown.
+Editor mode runs inside the current Unreal Editor process. It uses the current
+Editor World, Game Localization Preview, Slate, and `FWidgetRenderer` for
+quick offscreen captures. Internally this remains the existing Fast mode and
+uses the existing `fast` profile and CLI names. It restores the localization
+preview enabled state, configured preview language, and current culture after
+success, failure, Stop, or module shutdown. Editor mode does not execute
+fixtures.
 
-The dashboard always labels this mode:
+Use Editor mode for everyday localization UI iteration.
 
-```text
-FAST PREVIEW — NOT RUNTIME AUTHORITATIVE
-```
-
-Fast Matrix does not execute fixtures. Use Runtime Matrix when the result must
-represent a game process; Runtime is the only Commandlet path.
-
-## Runtime Matrix
+## Runtime check
 
 Runtime Matrix starts a separate sibling `UnrealEditor.exe -game` process for
 each culture, one culture at a time. Each process changes its requested
@@ -170,13 +165,17 @@ Open **Tools > L10N Visual QA**. The dashboard provides:
 
 - profile selection and validation errors;
 - **Reload Profiles** and **Open Profiles Folder**;
-- **Run Fast**, **Run Runtime**, and **Stop**;
+- an **Editor / Runtime** mode selector, **Run Check**, and **Stop**;
+- Editor mode selected by default for everyday checks;
+- a `Results: Editor` or `Results: Runtime` label that identifies the
+  displayed result independently from the next selected mode;
 - culture × resolution result status using both text and symbols;
 - enabled Target selection list on the left;
 - clickable Culture × Resolution cells on the right with explicit `[PASS]`,
   `[CHANGED]`, `[NEW]`, `[CAPTURE FAILED]`, `[INVALID BASELINE]`,
   `[CANCELLED]`, `[RUNNER ERROR]`, and `[NOT RUN]` labels;
-- simultaneous Baseline, Current, and Diff previews with image paths;
+- simultaneous Baseline, Current, and Diff previews with image paths; click an
+  available image to open the Image Viewer with Fit, 100%, zoom, and pan;
 - selected Target, Culture, Resolution, status, global difference, maximum
   local difference, and message;
 - **Approve Selected** and confirmation-protected **Approve All**.
@@ -184,8 +183,9 @@ Open **Tools > L10N Visual QA**. The dashboard provides:
 Missing preview files show an empty image and `Not available`. While a run is
 active, profile changes, reload, run, and approval controls are disabled;
 **Stop** remains available. The dashboard refreshes approximately every 0.1
-seconds so intermediate matrix results are visible. The dashboard does not
-edit profile JSON; edit the file and reload it instead.
+seconds so intermediate matrix results are visible without rebuilding the
+matrix structure. The dashboard does not edit profile JSON; edit the file and
+reload it instead.
 
 ## Command Line / CI
 
@@ -203,8 +203,8 @@ UnrealEditor-Cmd.exe <Project>.uproject `
   -RenderOffscreen
 ```
 
-Fast Matrix must run in `UnrealEditor.exe`, because it uses Slate and
-`FWidgetRenderer`. Use the editor bootstrap flag:
+The internal Fast mode must run in `UnrealEditor.exe`, because it uses Slate
+and `FWidgetRenderer`. Use the editor bootstrap flag:
 
 ```powershell
 UnrealEditor.exe <Project>.uproject `
