@@ -176,7 +176,7 @@ Open **Tools > L10N Visual QA**. The dashboard provides:
 - clickable Culture × Resolution cells on the right with explicit `[PASS]`,
   `[CHANGED]`, `[NO BASELINE]`, `[CAPTURE FAILED]`, `[INVALID BASELINE]`,
   `[CANCELLED]`, `[RUNNER ERROR]`, and `[NOT RUN]` labels;
-- simultaneous Baseline, Current, and Diff previews with image paths; a No
+- simultaneous Baseline, Current, and Difference Image previews with image paths; a No
   Baseline case shows `No baseline yet` and `No difference image — a baseline is
   required first`; click an available image to open the Image Viewer with Fit
   Window, Actual Size (100%), zoom, pan, view selection, Changed Areas, raw
