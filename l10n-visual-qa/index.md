@@ -141,9 +141,10 @@ cook/package rules because it is not gameplay content.
 
 ## Baseline Workflow
 
-The first successful capture of a combination is `New`. Review the current
-image, then use **Approve Selected** or the confirmed **Approve All** action in
-the editor dashboard. Only `Changed`, `New`, and `InvalidBaseline` cases are
+The first successful capture of a combination is `NoBaseline`. No baseline
+exists yet: review the Current image, then use **Approve Selected** or the
+confirmed **Approve All** action in the editor dashboard to establish it. Only
+`Changed`, `NoBaseline`, and `InvalidBaseline` cases are
 eligible. Approval preflights and stages the current PNG and `.meta.json`,
 backs up any existing pair, commits both in the same destination directory,
 and restores the old pair on failure. It never leaves one file from the old
@@ -168,19 +169,25 @@ Open **Tools > L10N Visual QA**. The dashboard provides:
 - an **Editor / Runtime** mode selector, **Run Check**, and **Stop**;
 - Editor mode selected by default for everyday checks;
 - a `Results: Editor` or `Results: Runtime` label that identifies the
-  displayed result independently from the next selected mode;
+  displayed result independently from the next selected mode; a valid profile
+  without a matching summary shows `Results: Not run for this profile`;
 - culture × resolution result status using both text and symbols;
 - enabled Target selection list on the left;
 - clickable Culture × Resolution cells on the right with explicit `[PASS]`,
-  `[CHANGED]`, `[NEW]`, `[CAPTURE FAILED]`, `[INVALID BASELINE]`,
+  `[CHANGED]`, `[NO BASELINE]`, `[CAPTURE FAILED]`, `[INVALID BASELINE]`,
   `[CANCELLED]`, `[RUNNER ERROR]`, and `[NOT RUN]` labels;
-- simultaneous Baseline, Current, and Diff previews with image paths; click an
-  available image to open the Image Viewer with Fit, 100%, zoom, and pan;
+- simultaneous Baseline, Current, and Diff previews with image paths; a No
+  Baseline case shows `No baseline yet` and `No difference image — a baseline is
+  required first`; click an available image to open the Image Viewer with Fit
+  Window, Actual Size (100%), zoom, pan, view selection, Changed Areas, raw
+  Difference Image, and Alternate Baseline / Current;
 - selected Target, Culture, Resolution, status, global difference, maximum
   local difference, and message;
 - **Approve Selected** and confirmation-protected **Approve All**.
 
-Missing preview files show an empty image and `Not available`. While a run is
+Missing preview files show an empty image and explain why they are unavailable.
+No baseline means: `No baseline exists yet. Review Current and approve it to
+establish the baseline.` While a run is
 active, profile changes, reload, run, and approval controls are disabled;
 **Stop** remains available. The dashboard refreshes approximately every 0.1
 seconds so intermediate matrix results are visible without rebuilding the
@@ -197,7 +204,7 @@ UnrealEditor-Cmd.exe <Project>.uproject `
   -run=L10NVisualQA `
   -Profile=ReleaseUI `
   -Mode=Runtime `
-  -AllowNew `
+  -AllowNoBaseline `
   -unattended `
   -nop4 `
   -RenderOffscreen
@@ -211,7 +218,7 @@ UnrealEditor.exe <Project>.uproject `
   -L10NVisualQAFast `
   -Profile=ReleaseUI `
   -Mode=Fast `
-  -AllowNew `
+  -AllowNoBaseline `
   -unattended `
   -nop4 `
   -RenderOffscreen
@@ -224,12 +231,12 @@ Parameters:
 - `-Mode=Runtime` — selects Runtime Matrix for the commandlet.
 - `-L10NVisualQAFast` with `-Mode=Fast` — selects Fast Matrix for the editor
   bootstrap.
-- `-AllowNew` — allows `New` cases to return success.
+- `-AllowNoBaseline` — allows `NoBaseline` cases to return success.
 
 Exit codes:
 
-- `0`: every case is `Pass`, or `New` with `-AllowNew`.
-- `1`: `Changed`, `New`, `CaptureFailed`, or `InvalidBaseline` remains.
+- `0`: every case is `Pass`, or `NoBaseline` with `-AllowNoBaseline`.
+- `1`: `Changed`, `NoBaseline`, `CaptureFailed`, or `InvalidBaseline` remains.
 - `2`: invalid profile, startup, worker, orchestration, rendering, or internal
   failure. `-nullrhi` always returns `2`.
 
