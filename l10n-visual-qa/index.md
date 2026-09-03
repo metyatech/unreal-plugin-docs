@@ -172,7 +172,8 @@ Open **Tools > L10N Visual QA**. The dashboard provides:
   displayed result independently from the next selected mode; a valid profile
   without a matching summary shows `Results: Not run for this profile`;
 - culture × resolution result status using both text and symbols;
-- enabled Target selection list on the left;
+- enabled Target selection list on the left; drag the divider to resize the
+  Target list while keeping the Matrix and previews usable;
 - clickable Culture × Resolution cells on the right with explicit `[PASS]`,
   `[CHANGED]`, `[NO BASELINE]`, `[CAPTURE FAILED]`, `[INVALID BASELINE]`,
   `[CANCELLED]`, `[RUNNER ERROR]`, and `[NOT RUN]` labels;
@@ -180,7 +181,9 @@ Open **Tools > L10N Visual QA**. The dashboard provides:
   Baseline case shows `No baseline yet` and `No difference image — a baseline is
   required first`; click an available image to open the Image Viewer with Fit
   Window, Actual Size (100%), zoom, pan, view selection, Changed Areas, raw
-  Difference Image, and Alternate Baseline / Current;
+  Difference Image, and Alternate Baseline / Current; the Alternate
+  Baseline / Current interval is adjustable from 0.10 to 5.00 seconds using
+  **Switch every**;
 - selected Target, Culture, Resolution, status, global difference, maximum
   local difference, and message;
 - **Approve Selected** and confirmation-protected **Approve All**.
