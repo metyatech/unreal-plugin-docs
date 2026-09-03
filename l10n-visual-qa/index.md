@@ -184,6 +184,9 @@ Open **Tools > L10N Visual QA**. The dashboard provides:
   Difference Image, and Alternate Baseline / Current; the Alternate
   Baseline / Current interval is adjustable from 0.10 to 5.00 seconds using
   **Switch every**;
+- Actual Size (100%) displays one source image pixel per physical screen pixel
+  and remains pixel-accurate when the Viewer window is resized; Fit Window
+  recalculates its physical zoom for the available viewport;
 - selected Target, Culture, Resolution, status, global difference, maximum
   local difference, and message;
 - **Approve Selected** and confirmation-protected **Approve All**.
