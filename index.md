@@ -11,5 +11,6 @@ Documentation for Unreal Engine plugins published by metyatech.
 - [Actor Metadata Overlay](./actor-metadata-overlay/)
 - [L10N Visual QA](./l10n-visual-qa/)
 - [MRQ Preflight](./mrq-preflight/)
+- [PIE Test Profiles](./pie-test-profiles/)
 
 Each product page is the canonical documentation for installation, usage, requirements, limitations, troubleshooting, and version history.
