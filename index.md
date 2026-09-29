@@ -12,5 +12,6 @@ Documentation for Unreal Engine plugins published by metyatech.
 - [L10N Visual QA](./l10n-visual-qa/)
 - [MRQ Preflight](./mrq-preflight/)
 - [PIE Test Profiles](./pie-test-profiles/)
+- [Find in Materials](./find-in-materials/)
 
 Each product page is the canonical documentation for installation, usage, requirements, limitations, troubleshooting, and version history.
