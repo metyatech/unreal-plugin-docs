@@ -1,6 +1,6 @@
 # Find in Materials
 
-Search open Material graphs and project-owned Material and Material Instance content, then open matching assets and navigate directly to matching graph expressions.
+Search Materials, Material Functions, and Material Instances across open assets and project-owned content, then open matching assets and navigate directly to matching graph expressions.
 
 ## Overview
 
@@ -96,7 +96,7 @@ If the matching expression cannot be resolved or focused, the asset may still op
 
 ## Content Browser Usage Search
 
-Select a Texture or Material Function in the Content Browser, right-click it, and choose **Find Usages in Materials**. For a Texture, the search uses its texture reference; for a Material Function, it uses its function reference. Find in Materials opens with the corresponding `texture:` or `function:` query ready to search.
+Select a Texture or Material Function in the Content Browser, right-click it, and choose **Find Usages in Materials**. For a Texture, the search uses its texture reference; for a Material Function, it uses its function reference. Find in Materials opens, switches to **Entire Project**, and immediately runs the corresponding `texture:` or `function:` query.
 
 ## Performance and Search Behavior
 
