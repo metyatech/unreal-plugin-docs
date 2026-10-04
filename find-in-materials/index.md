@@ -43,8 +43,8 @@ This procedure uses an asset created in the target project and does not depend o
 5. Open **Tools > Find in Materials**.
 6. Set **Scope** to **Entire Project**.
 7. Enter `parameter:FIM_Verify_Param` and click **Search**.
-8. Confirm `M_FIM_Verification` appears as a matching asset and has a child match for `FIM_Verify_Param`.
-9. Double-click the child row. The Material Editor should open with that Scalar Parameter node focused and selected.
+8. Confirm `M_FIM_Verification` appears as a matching asset and has one child match for `FIM_Verify_Param`.
+9. Double-click the child row. The Material Editor should open with that exact Scalar Parameter node focused and selected.
 
 ## Search Scopes
 
@@ -75,22 +75,22 @@ Plain-text terms are case-insensitive substring matches. Multiple terms are comb
 | `comment:` | Node comments |
 | `path:` | Asset package path |
 
-These query examples are templates. Replace each `<...>` placeholder with a name or value from your own project:
+These query examples are templates. Replace each uppercase placeholder with a name or value from your own project:
 
 ```text
-<text>
-texture:<TextureName>
-parameter:<ParameterName>
-function:<MaterialFunctionName>
-comment:"<comment text>"
-parameter:<ParameterName> texture:<TextureName>
-type:<ExpressionType>
-name:<NodeOrDisplayName>
-value:<Value>
-path:/Game/<Folder>
+SEARCH_TEXT
+texture:YOUR_TEXTURE_NAME
+parameter:YOUR_PARAMETER_NAME
+function:YOUR_MATERIAL_FUNCTION_NAME
+comment:"YOUR_COMMENT_TEXT"
+parameter:YOUR_PARAMETER_NAME texture:YOUR_TEXTURE_NAME
+type:YOUR_EXPRESSION_TYPE
+name:YOUR_NODE_OR_DISPLAY_NAME
+value:YOUR_VALUE
+path:/Game/YOUR_FOLDER
 ```
 
-The combined template `parameter:<ParameterName> texture:<TextureName>` returns matches that satisfy both filters. Replace both placeholders with values from your project.
+The combined template `parameter:YOUR_PARAMETER_NAME texture:YOUR_TEXTURE_NAME` returns matches that satisfy both filters. Replace both uppercase placeholders with values from your project.
 
 ## What Is Searched
 
