@@ -22,8 +22,6 @@ Search expression types and names, parameter names and values, texture and Mater
 3. Restart the Editor if requested.
 4. Open **Tools > Find in Materials**.
 
-For a source installation, copy the `FindInMaterials` plugin folder from the [source repository](https://github.com/metyatech/FindInMaterials) into the target project's `Plugins` folder, then enable it in the Editor.
-
 ## Quick Start
 
 1. Open **Tools > Find in Materials**.
@@ -33,6 +31,20 @@ For a source installation, copy the `FindInMaterials` plugin folder from the [so
 5. Double-click a matching child row.
 6. For a Material or Material Function, the editor opens and focuses/selects the matching expression.
 7. For a Material Instance, its editor opens.
+
+## Verify Search
+
+This procedure uses an asset created in the target project and does not depend on an external demo or Starter Content:
+
+1. Create a Material named `M_FIM_Verification` under `/Game/FIM_Verification`.
+2. Open the Material and add one Scalar Parameter node.
+3. Set its Parameter Name to `FIM_Verify_Param`.
+4. Save the Material.
+5. Open **Tools > Find in Materials**.
+6. Set **Scope** to **Entire Project**.
+7. Enter `parameter:FIM_Verify_Param` and click **Search**.
+8. Confirm `M_FIM_Verification` appears as a matching asset and has a child match for `FIM_Verify_Param`.
+9. Double-click the child row. The Material Editor should open with that Scalar Parameter node focused and selected.
 
 ## Search Scopes
 
@@ -63,22 +75,22 @@ Plain-text terms are case-insensitive substring matches. Multiple terms are comb
 | `comment:` | Node comments |
 | `path:` | Asset package path |
 
-Examples:
+These query examples are templates. Replace each `<...>` placeholder with a name or value from your own project:
 
 ```text
-Roughness
-texture:T_SearchGrid
-parameter:Roughness
-function:MF_ChannelTint
-comment:"temporary surface"
-parameter:Roughness texture:T_SearchGrid
-type:TextureSample
-name:SurfaceTexture
-value:0.5
-path:/Game/Materials
+<text>
+texture:<TextureName>
+parameter:<ParameterName>
+function:<MaterialFunctionName>
+comment:"<comment text>"
+parameter:<ParameterName> texture:<TextureName>
+type:<ExpressionType>
+name:<NodeOrDisplayName>
+value:<Value>
+path:/Game/<Folder>
 ```
 
-The combined example `parameter:Roughness texture:T_SearchGrid` returns matches that satisfy both filters.
+The combined template `parameter:<ParameterName> texture:<TextureName>` returns matches that satisfy both filters. Replace both placeholders with values from your project.
 
 ## What Is Searched
 
@@ -130,6 +142,18 @@ Check that the plugin is enabled under **Edit > Plugins**. Restart the Editor if
 
 Verify the selected scope and query or filters. Entire Project searches project-owned content only. For Folder scope, check that the path is under `/Game`.
 
+### No searchable Materials, Material Functions, or Material Instances were found in the selected scope.
+
+There are no supported assets in the selected scope. Create or add a Material, Material Function, or Material Instance there, or choose another scope.
+
+### Search completed with no matches. Check the scope or try a broader query.
+
+The search completed successfully, but no searchable expression or value matched the query. Check the query and selected scope, or try a broader query.
+
+### Enter a search query.
+
+Enter a query before starting a search.
+
 ### Folder scope shows an error
 
 Folder scope accepts only `/Game` or `/Game/...` paths. Use **Browse...** to choose a project content folder.
@@ -165,5 +189,4 @@ Initial release with:
 
 ## Links
 
-- [Source repository](https://github.com/metyatech/FindInMaterials)
 - [Support and troubleshooting](https://metyatech.github.io/unreal-plugin-docs/find-in-materials/#troubleshooting)
