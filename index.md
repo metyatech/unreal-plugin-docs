@@ -15,3 +15,4 @@ Documentation for Unreal Engine plugins published by metyatech.
 - [Find in Materials](./find-in-materials/)
 
 Each product page is the canonical documentation for installation, usage, requirements, limitations, troubleshooting, and version history.
+- [Recently Saved Assets](./recently-saved-assets/)
