@@ -24,17 +24,26 @@ Search expression types and names, parameter names and values, texture and Mater
 
 ## Quick Start
 
-1. Open **Tools > Find in Materials**.
-2. Choose a search scope.
-3. Enter a query.
-4. Press **Enter** or click **Search**.
-5. Double-click a matching child row.
-6. For a Material or Material Function, the editor opens and focuses/selects the matching expression.
-7. For a Material Instance, its editor opens.
+The Find in Materials Fab Additional File `FindInMaterialsDemo_UE5.8.zip` contains a known-data example project for Unreal Engine 5.8. The plugin supports Unreal Engine 5.6, 5.7, and 5.8; this demo project specifically uses 5.8.
 
-## Verify Search
+1. Make the Find in Materials plugin's Unreal Engine 5.8 version available to a project.
+2. Extract `FindInMaterialsDemo_UE5.8.zip` from Fab's Additional Files.
+3. Open `FindInMaterialsDemo.uproject` with Unreal Engine 5.8.
+4. If shaders or materials compile, wait for compilation to finish.
+5. Open **Tools > Find in Materials**.
+6. Set **Scope** to **Entire Project**.
+7. Search for `comment:"surface roughness"`.
+8. Confirm `M_SearchableSurface` appears as a matching asset and its child match contains the comment match.
+9. Double-click that child match.
+10. Confirm the `M_SearchableSurface` Material Editor opens and the corresponding expression is focused and selected.
 
-This procedure uses an asset created in the target project and does not depend on an external demo or Starter Content:
+### Expected result
+
+`M_SearchableSurface` appears in the results with a child match for the `surface roughness` comment. Double-clicking the child opens the `M_SearchableSurface` Material Editor and focuses/selects the matching expression.
+
+## Manual verification without the demo project
+
+Use this procedure when the Fab Additional File is unavailable. It creates a known Material in your own project:
 
 1. Create a Material named `M_FIM_Verification` under `/Game/FIM_Verification`.
 2. Open the Material and add one Scalar Parameter node.
